@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from './hooks/useUser';
 
@@ -12,36 +12,71 @@ export default function Home() {
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function loadTasks() {
+  const loadTasks = useCallback(async () => {
     if (!user) { setTasks([]); return; }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) setTasks(data as Task[]);
-    setLoading(false);
-  }
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) setTasks(data as Task[]);
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
-  async function addTask() {
-    if (!user) return;
-    const newTitle = title.trim();
-    if (!newTitle) return;
-    const { error } = await supabase.from('tasks').insert({ title: newTitle, user_id: user.id });
-    if (!error) { setTitle(''); loadTasks(); } else { alert(error.message); }
-  }
+  const addTask = useCallback(async () => {
+    if (!user || !title.trim()) return;
+    try {
+      const { error } = await supabase.from('tasks').insert({ title: title.trim(), user_id: user.id });
+      if (!error) { 
+        setTitle(''); 
+        loadTasks(); 
+      } else { 
+        console.error('Error adding task:', error.message); 
+      }
+    } catch (err) {
+      console.error('Error adding task:', err);
+    }
+  }, [user, title, loadTasks]);
 
-  async function toggleTask(id: number, current: boolean) {
-    const { error } = await supabase.from('tasks').update({ is_done: !current }).eq('id', id);
-    if (!error) loadTasks();
-  }
+  const toggleTask = useCallback(async (id: number, current: boolean) => {
+    try {
+      const { error } = await supabase.from('tasks').update({ is_done: !current }).eq('id', id);
+      if (!error) loadTasks();
+    } catch (err) {
+      console.error('Error toggling task:', err);
+    }
+  }, [loadTasks]);
 
-  async function deleteTask(id: number) {
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
-    if (!error) loadTasks();
-  }
+  const deleteTask = useCallback(async (id: number) => {
+    try {
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
+      if (!error) loadTasks();
+    } catch (err) {
+      console.error('Error deleting task:', err);
+    }
+  }, [loadTasks]);
 
-  useEffect(() => { loadTasks(); }, [user?.id]);
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') addTask();
+  }, [addTask]);
+
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+  }, []);
+
+  // Memoize computed values
+  const completedTasks = useMemo(() => tasks.filter(t => t.is_done).length, [tasks]);
+  const totalTasks = useMemo(() => tasks.length, [tasks]);
+  const isTitleEmpty = useMemo(() => !title.trim(), [title]);
+
+  useEffect(() => { 
+    loadTasks(); 
+  }, [loadTasks]);
 
   return (
     <div className="grid place-items-center min-h-screen">
@@ -79,13 +114,13 @@ export default function Home() {
                   className="input flex-1"
                   placeholder="Enter your next task..."
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addTask()}
+                  onChange={handleTitleChange}
+                  onKeyDown={handleKeyDown}
                 />
                 <button 
                   onClick={addTask} 
                   className="btn"
-                  disabled={!title.trim()}
+                  disabled={isTitleEmpty}
                 >
                   Add Task
                 </button>
@@ -136,7 +171,7 @@ export default function Home() {
             {!loading && tasks.length > 0 && (
               <div className="mt-6 text-center">
                 <p className="text-xs text-slate-500">
-                  {tasks.filter(t => t.is_done).length} of {tasks.length} tasks completed
+                  {completedTasks} of {totalTasks} tasks completed
                 </p>
               </div>
             )}

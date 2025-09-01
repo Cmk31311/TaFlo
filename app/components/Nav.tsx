@@ -1,22 +1,39 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 
 export default function Nav() {
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setIsAuthed(Boolean(data.session)));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setIsAuthed(Boolean(s)));
+    const getSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setIsAuthed(Boolean(data.session));
+      } catch (err) {
+        console.error('Error getting session:', err);
+      }
+    };
+
+    getSession();
+    
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setIsAuthed(Boolean(s));
+    });
+    
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    window.location.href = '/';
-  }
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Error signing out:', err);
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-40">

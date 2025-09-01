@@ -26,18 +26,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="particle"></div>
           <div className="particle"></div>
           <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
-          <div className="particle"></div>
         </div>
         <Nav />
         <main className="mx-auto max-w-5xl p-6">{children}</main>
