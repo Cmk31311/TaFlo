@@ -39,7 +39,7 @@ export default function Nav() {
     <header className="sticky top-0 z-40">
       <div className="glass mx-auto max-w-5xl mt-4 mb-6 px-6 py-4 flex items-center justify-between">
         <Link href="/" className="gradient-text font-bold text-2xl tracking-tight">
-          TaFLo
+          TaFlo
         </Link>
 
         <div className="flex items-center gap-4">

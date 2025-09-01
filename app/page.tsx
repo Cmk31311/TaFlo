@@ -83,7 +83,7 @@ export default function Home() {
       <section className="glass w-full max-w-4xl p-8">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="gradient-text text-4xl font-bold tracking-tight mb-2">TaFLo</h1>
+            <h1 className="gradient-text text-4xl font-bold tracking-tight mb-2">TaFlo</h1>
             <p className="text-slate-300 text-sm">Your futuristic task companion</p>
           </div>
           <div className="text-right">
