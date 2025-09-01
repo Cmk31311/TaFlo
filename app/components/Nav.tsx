@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient'; // from app/components → ../../lib
+import { supabase } from '../../lib/supabaseClient';
 
 export default function Nav() {
   const [isAuthed, setIsAuthed] = useState(false);
@@ -19,13 +19,20 @@ export default function Nav() {
   }
 
   return (
-    <nav className="p-4 border-b flex items-center justify-between">
-      <Link href="/" className="font-semibold">MyApp</Link>
-      {!isAuthed ? (
-        <Link href="/auth" className="underline">Sign in</Link>
-      ) : (
-        <button onClick={signOut} className="border rounded px-3 py-1">Sign out</button>
-      )}
-    </nav>
+    <header className="sticky top-0 z-40">
+      <div className="glass mx-auto max-w-5xl mt-4 mb-6 px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="gradient-text font-bold text-2xl tracking-tight">
+          TaFLo
+        </Link>
+
+        <div className="flex items-center gap-4">
+          {!isAuthed ? (
+            <Link href="/auth" className="btn-neon">Sign In</Link>
+          ) : (
+            <button onClick={signOut} className="btn-outline">Sign Out</button>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }

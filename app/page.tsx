@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient'; // from app/page → ../lib
+import { supabase } from '../lib/supabaseClient';
 import { useUser } from './hooks/useUser';
 
 type Task = { id: number; user_id: string; title: string; is_done: boolean; created_at: string };
@@ -27,10 +27,7 @@ export default function Home() {
     if (!user) return;
     const newTitle = title.trim();
     if (!newTitle) return;
-    const { error } = await supabase.from('tasks').insert({
-      title: newTitle,
-      user_id: user.id, // required for RLS
-    });
+    const { error } = await supabase.from('tasks').insert({ title: newTitle, user_id: user.id });
     if (!error) { setTitle(''); loadTasks(); } else { alert(error.message); }
   }
 
@@ -47,63 +44,105 @@ export default function Home() {
   useEffect(() => { loadTasks(); }, [user?.id]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-4">Your tasks</h1>
-
-      {!user && (
-        <p className="text-gray-700">
-          Please <a className="underline" href="/auth">sign in</a> to manage tasks.
-        </p>
-      )}
-
-      {user && (
-        <>
-          <div className="flex gap-2 mb-4">
-            <input
-              className="border rounded p-2 flex-1"
-              placeholder="New task title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addTask()}
-            />
-            <button
-              onClick={addTask}
-              className="bg-black text-white rounded px-4 disabled:opacity-50"
-              disabled={!title.trim()}
-            >
-              Add
-            </button>
+    <div className="grid place-items-center min-h-screen">
+      <section className="glass w-full max-w-4xl p-8">
+        <header className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="gradient-text text-4xl font-bold tracking-tight mb-2">TaFLo</h1>
+            <p className="text-slate-300 text-sm">Your futuristic task companion</p>
           </div>
+          <div className="text-right">
+            <span className="text-xs text-slate-400 block">Powered by</span>
+            <span className="glow-text text-sm font-mono">Supabase</span>
+          </div>
+        </header>
 
-          {loading && <p className="text-sm text-gray-500">Loading…</p>}
+        {!user && (
+          <div className="glass-card p-6 text-center">
+            <p className="text-slate-300 mb-4">
+              Welcome to the future of task management
+            </p>
+            <a 
+              className="btn-neon" 
+              href="/auth"
+            >
+              Sign In to Continue
+            </a>
+          </div>
+        )}
 
-          <ul className="space-y-2">
-            {tasks.map((t) => (
-              <li key={t.id} className="border p-3 rounded flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={t.is_done}
-                    onChange={() => toggleTask(t.id, t.is_done)}
-                    className="w-4 h-4"
-                  />
-                  <span className={t.is_done ? 'line-through text-gray-500' : ''}>{t.title}</span>
-                </div>
-                <button
-                  onClick={() => deleteTask(t.id)}
-                  className="text-sm text-red-600 hover:underline"
+        {user && (
+          <>
+            <div className="glass-card p-6 mb-6">
+              <div className="flex gap-4">
+                <input
+                  className="input flex-1"
+                  placeholder="Enter your next task..."
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addTask()}
+                />
+                <button 
+                  onClick={addTask} 
+                  className="btn"
+                  disabled={!title.trim()}
                 >
-                  Delete
+                  Add Task
                 </button>
-              </li>
-            ))}
-          </ul>
+              </div>
+            </div>
 
-          {!loading && tasks.length === 0 && (
-            <p className="text-sm text-gray-600 mt-2">No tasks yet — add your first one!</p>
-          )}
-        </>
-      )}
+            {loading && (
+              <div className="text-center py-8">
+                <p className="text-slate-400 loading-dots">Loading tasks</p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {tasks.map((t) => (
+                <div key={t.id} className="task-item">
+                  <label className="flex items-center gap-4 cursor-pointer flex-1">
+                    <input
+                      type="checkbox"
+                      className="checkbox"
+                      checked={t.is_done}
+                      onChange={() => toggleTask(t.id, t.is_done)}
+                    />
+                    <span className={`transition-all duration-300 ${t.is_done ? 'line-through text-slate-400' : 'text-slate-100'}`}>
+                      {t.title}
+                    </span>
+                  </label>
+
+                  <button
+                    onClick={() => deleteTask(t.id)}
+                    className="btn-outline text-xs px-3 py-2 opacity-70 group-hover:opacity-100 transition-all duration-300"
+                    title="Delete"
+                    aria-label="Delete task"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {!loading && tasks.length === 0 && (
+              <div className="glass-card p-8 text-center">
+                <div className="text-6xl mb-4">✨</div>
+                <p className="text-slate-400 mb-2">No tasks yet</p>
+                <p className="text-sm text-slate-500">Add your first task to get started!</p>
+              </div>
+            )}
+
+            {!loading && tasks.length > 0 && (
+              <div className="mt-6 text-center">
+                <p className="text-xs text-slate-500">
+                  {tasks.filter(t => t.is_done).length} of {tasks.length} tasks completed
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }
