@@ -2,8 +2,6 @@
 
 TaFlo is a modern, minimalistic, and feature-rich task manager built with Next.js, Supabase, and TailwindCSS. It combines productivity tools — task lists, Kanban boards, calendars, and analytics — into a clean, responsive interface.
 
-<p align="center"> <img alt="TaFlo demo preview" src="docs/screenshot-home.png" width="800" /> </p>
-
 🚀 Features
 ✅ Core Task Management
 
@@ -47,6 +45,7 @@ TaFlo is a modern, minimalistic, and feature-rich task manager built with Next.j
 
 🖱️ Smooth drag-and-drop + micro animations
 
+
 🛠️ Tech Stack
 
 Framework: Next.js (App Router) + TypeScript
@@ -56,6 +55,7 @@ UI: Tailwind CSS, PostCSS
 Backend: Supabase (Database & Auth)
 
 Tooling: ESLint, TypeScript, Node.js (v18+)
+
 
 📂 Project Structure
 .
@@ -72,6 +72,7 @@ Tooling: ESLint, TypeScript, Node.js (v18+)
 ├─ DEPLOYMENT_GUIDE.md
 └─ README.md
 
+
 ⚡ Getting Started
 🔧 Prerequisites
 
@@ -80,6 +81,7 @@ Node.js 18+
 npm (or pnpm/yarn)
 
 Supabase project
+
 
 🌍 Environment Variables
 
@@ -93,12 +95,15 @@ Fill in with Supabase values:
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 
+
+
 💻 Local Development
 npm install
 npm run dev
 
-
 Visit → http://localhost:3000
+
+
 
 🗄️ Database Setup
 
@@ -108,11 +113,13 @@ database-migration.sql — full schema
 
 simple-migration.sql — minimal schema
 
+
 📜 Scripts
 npm run dev     # start dev server
 npm run build   # production build
 npm run start   # run built app
 npm run lint    # run ESLint
+
 
 ☁️ Deployment
 ▲ Vercel
@@ -125,6 +132,7 @@ Output: .next
 
 Add environment variables in Vercel Settings
 
+
 🔗 Supabase Configuration
 
 Go to Authentication → URL Configuration
@@ -132,6 +140,7 @@ Go to Authentication → URL Configuration
 Add: https://your-app.vercel.app under Site URL
 
 Add http://localhost:3000 for dev
+
 
 ⚙️ Configuration Notes
 
