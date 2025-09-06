@@ -95,11 +95,26 @@ export default function Home() {
     </div>
   ), [stats]);
 
-  // Always show the dashboard - no authentication required for development
+  // Always show the dashboard UI
 
   return (
     <div className="min-h-screen" style={{ transform: 'translateZ(0)', willChange: 'scroll-position' }}>
       <section className="w-full max-w-7xl mx-auto p-6 space-y-6" style={{ transform: 'translateZ(0)' }}>
+        {/* Sign-in Banner (when not authenticated) */}
+        {!user && (
+          <div className="glass-card p-4 mb-6 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-blue-400 mb-1">Welcome to TaFlo!</h3>
+                <p className="text-slate-300 text-sm">Sign in to save your tasks and sync across devices</p>
+              </div>
+              <a href="/auth" className="btn-neon text-sm">
+                Sign In
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="flex items-center justify-between">
           <div>

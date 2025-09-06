@@ -11,7 +11,10 @@ export default function AuthPage() {
   // If already signed in, go home
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) window.location.href = '/';
+      if (data.session) {
+        console.log('Auth page: User already authenticated, redirecting to home');
+        window.location.href = '/';
+      }
     });
   }, []);
 
@@ -35,40 +38,60 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="grid place-items-center px-4">
-      <div className="glass w-full max-w-sm p-6 mt-10">
-        <h1 className="text-2xl font-semibold mb-2">Sign in</h1>
-        <p className="text-sm text-slate-300 mb-4">
-          We’ll email you a magic link.
-        </p>
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="gradient-text text-4xl font-bold tracking-tight mb-2">TaFlo</h1>
+          <p className="text-slate-300 text-sm">Your futuristic task companion</p>
+        </div>
 
-        <input
-          type="email"
-          className="input mb-2"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoFocus
-        />
-
-        <button
-          onClick={signInWithMagicLink}
-          className="btn w-full"
-          disabled={!email.trim()}
-        >
-          Get magic link
-        </button>
-
-        {sent && (
-          <p className="mt-3 text-sm text-emerald-400">
-            Link sent! Check your inbox.
+        {/* Sign in form */}
+        <div className="glass-card p-8">
+          <h2 className="text-2xl font-semibold mb-2 gradient-text">Sign in</h2>
+          <p className="text-sm text-slate-300 mb-6">
+            We'll email you a magic link.
           </p>
-        )}
-        {error && (
-          <p className="mt-3 text-sm text-rose-400">
-            {error}
-          </p>
-        )}
+
+          <input
+            type="email"
+            className="input mb-4"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoFocus
+          />
+
+          <button
+            onClick={signInWithMagicLink}
+            className="btn-neon w-full"
+            disabled={!email.trim()}
+          >
+            Get magic link
+          </button>
+
+          {sent && (
+            <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <p className="text-sm text-emerald-400">
+                ✉️ Link sent! Check your inbox.
+              </p>
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+              <p className="text-sm text-rose-400">
+                ❌ {error}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Back to home link */}
+        <div className="text-center mt-6">
+          <a href="/" className="text-slate-400 hover:text-slate-300 text-sm">
+            ← Back to dashboard
+          </a>
+        </div>
       </div>
     </div>
   );
