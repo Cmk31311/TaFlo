@@ -1,83 +1,96 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { useState, useCallback, useMemo } from 'react';
 import { useUser } from './hooks/useUser';
+import { useTasksSimple } from './hooks/useTasksSimple';
+import { useCategories } from './hooks/useCategories';
+import { usePriorities } from './hooks/usePriorities';
+import { TaskFilter, ViewMode } from '../lib/simpleTypes';
 
-type Task = { id: number; user_id: string; title: string; is_done: boolean; created_at: string };
+// Components
+import EnhancedTaskItem from './components/EnhancedTaskItem';
+import BasicTaskItem from './components/BasicTaskItem';
+import EnhancedTaskForm from './components/EnhancedTaskForm';
+import SimpleTaskForm from './components/SimpleTaskForm';
+import SearchAndFilter from './components/SearchAndFilter';
 
 export default function Home() {
   const user = useUser();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [title, setTitle] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [currentFilter, setCurrentFilter] = useState<TaskFilter>({});
+  const [viewMode, setViewMode] = useState<ViewMode>({ type: 'list' });
+  const [showTaskForm, setShowTaskForm] = useState(false);
 
-  const loadTasks = useCallback(async () => {
-    if (!user) { setTasks([]); return; }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) setTasks(data as Task[]);
-    } catch (err) {
-      console.error('Error loading tasks:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  // Data hooks
+  const { 
+    tasks, 
+    loading, 
+    stats, 
+    addTask, 
+    updateTask, 
+    deleteTask, 
+    toggleTask
+  } = useTasksSimple(currentFilter);
 
-  const addTask = useCallback(async () => {
-    if (!user || !title.trim()) return;
+  const { 
+    categories, 
+    addCategory, 
+    updateCategory, 
+    deleteCategory 
+  } = useCategories();
+
+  const { 
+    priorities, 
+    addPriority, 
+    updatePriority, 
+    deletePriority 
+  } = usePriorities();
+
+  // Task form handlers
+  const handleAddTask = useCallback(async (taskData: any) => {
     try {
-      const { error } = await supabase.from('tasks').insert({ title: title.trim(), user_id: user.id });
-      if (!error) { 
-        setTitle(''); 
-        loadTasks(); 
-      } else { 
-        console.error('Error adding task:', error.message); 
+      const result = await addTask(taskData);
+      if (result) {
+        setShowTaskForm(false);
       }
-    } catch (err) {
-      console.error('Error adding task:', err);
+      return result;
+    } catch (error) {
+      console.error('Error adding task:', error);
+      return null;
     }
-  }, [user, title, loadTasks]);
-
-  const toggleTask = useCallback(async (id: number, current: boolean) => {
-    try {
-      const { error } = await supabase.from('tasks').update({ is_done: !current }).eq('id', id);
-      if (!error) loadTasks();
-    } catch (err) {
-      console.error('Error toggling task:', err);
-    }
-  }, [loadTasks]);
-
-  const deleteTask = useCallback(async (id: number) => {
-    try {
-      const { error } = await supabase.from('tasks').delete().eq('id', id);
-      if (!error) loadTasks();
-    } catch (err) {
-      console.error('Error deleting task:', err);
-    }
-  }, [loadTasks]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') addTask();
   }, [addTask]);
 
-  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
+
+  // View mode handlers
+  const handleViewModeChange = useCallback((type: 'list' | 'kanban' | 'calendar', groupBy?: string) => {
+    setViewMode({ type, groupBy: groupBy as any });
   }, []);
 
-  // Memoize computed values
-  const completedTasks = useMemo(() => tasks.filter(t => t.is_done).length, [tasks]);
-  const totalTasks = useMemo(() => tasks.length, [tasks]);
-  const isTitleEmpty = useMemo(() => !title.trim(), [title]);
+  // Simple stats display
+  const statsDisplay = useMemo(() => (
+    <div className="glass-card p-6">
+      <h3 className="text-lg font-semibold mb-4 gradient-text">Quick Stats</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-slate-100">{stats.total}</div>
+          <div className="text-sm text-slate-400">Total Tasks</div>
+        </div>
+        <div className="text-center">
+          <div className="text-2xl font-bold text-green-400">{stats.completed}</div>
+          <div className="text-sm text-slate-400">Completed</div>
+        </div>
+        <div className="text-center">
+          <div className="text-2xl font-bold text-yellow-400">{stats.pending}</div>
+          <div className="text-sm text-slate-400">Pending</div>
+        </div>
+        <div className="text-center">
+          <div className="text-2xl font-bold text-blue-400">{Math.round(stats.completionRate)}%</div>
+          <div className="text-sm text-slate-400">Complete</div>
+        </div>
+      </div>
+    </div>
+  ), [stats]);
 
-  useEffect(() => { 
-    loadTasks(); 
-  }, [loadTasks]);
-
+  if (!user) {
   return (
     <div className="grid place-items-center min-h-screen">
       <section className="glass w-full max-w-4xl p-8">
@@ -92,90 +105,167 @@ export default function Home() {
           </div>
         </header>
 
-        {!user && (
           <div className="glass-card p-6 text-center">
             <p className="text-slate-300 mb-4">
               Welcome to the future of task management
             </p>
-            <a 
-              className="btn-neon" 
-              href="/auth"
-            >
+            <a className="btn-neon" href="/auth">
               Sign In to Continue
             </a>
           </div>
-        )}
+        </section>
+      </div>
+    );
+  }
 
-        {user && (
-          <>
-            <div className="glass-card p-6 mb-6">
-              <div className="flex gap-4">
+  return (
+    <div className="min-h-screen" style={{ transform: 'translateZ(0)', willChange: 'scroll-position' }}>
+      <section className="w-full max-w-7xl mx-auto p-6 space-y-6" style={{ transform: 'translateZ(0)' }}>
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="gradient-text text-4xl font-bold tracking-tight mb-2">TaFlo</h1>
+            <p className="text-slate-300 text-sm">Your futuristic task companion</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {/* Settings button removed */}
+          </div>
+        </header>
+
+        {/* Quick Add Task - Always Visible */}
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold gradient-text">Quick Add Task</h3>
+            <button
+              onClick={() => setShowTaskForm(!showTaskForm)}
+              className="btn-neon text-sm"
+            >
+              {showTaskForm ? 'Cancel' : '+ Add Task'}
+            </button>
+          </div>
+          
+          {showTaskForm ? (
+            categories.length > 0 || priorities.length > 0 ? (
+              <EnhancedTaskForm
+                onSubmit={handleAddTask}
+                categories={categories}
+                priorities={priorities}
+                onCancel={() => setShowTaskForm(false)}
+              />
+            ) : (
+              <SimpleTaskForm
+                onSubmit={handleAddTask}
+                onCancel={() => setShowTaskForm(false)}
+              />
+            )
+          ) : (
+            <div className="flex gap-3">
                 <input
+                type="text"
                   className="input flex-1"
-                  placeholder="Enter your next task..."
-                  value={title}
-                  onChange={handleTitleChange}
-                  onKeyDown={handleKeyDown}
+                placeholder="What needs to be done?"
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    const title = e.currentTarget.value.trim();
+                    e.currentTarget.value = '';
+                    try {
+                      await handleAddTask({ title });
+                    } catch (error) {
+                      console.error('Error adding quick task:', error);
+                    }
+                  }
+                }}
                 />
                 <button 
-                  onClick={addTask} 
+                onClick={async () => {
+                  const input = document.querySelector('input[placeholder="What needs to be done?"]') as HTMLInputElement;
+                  if (input && input.value.trim()) {
+                    const title = input.value.trim();
+                    input.value = '';
+                    try {
+                      await handleAddTask({ title });
+                    } catch (error) {
+                      console.error('Error adding task:', error);
+                    }
+                  }
+                }}
                   className="btn"
-                  disabled={isTitleEmpty}
                 >
                   Add Task
                 </button>
               </div>
+          )}
             </div>
 
-            {loading && (
-              <div className="text-center py-8">
-                <p className="text-slate-400 loading-dots">Loading tasks</p>
-              </div>
-            )}
+        {/* Search and Filter */}
+        <SearchAndFilter
+          onFilterChange={setCurrentFilter}
+          categories={categories}
+          priorities={priorities}
+          currentFilter={currentFilter}
+        />
 
-            <div className="space-y-3">
-              {tasks.map((t) => (
-                <div key={t.id} className="task-item">
-                  <label className="flex items-center gap-4 cursor-pointer flex-1">
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={t.is_done}
-                      onChange={() => toggleTask(t.id, t.is_done)}
-                    />
-                    <span className={`transition-all duration-300 ${t.is_done ? 'line-through text-slate-400' : 'text-slate-100'}`}>
-                      {t.title}
-                    </span>
-                  </label>
+        {/* Stats Display */}
+        {statsDisplay}
 
+        {/* View Mode Toggle */}
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => handleViewModeChange('list')}
+            className={`btn-outline ${viewMode.type === 'list' ? 'bg-blue-500/20 text-blue-400' : ''}`}
+          >
+            📋 List View
+          </button>
+          <button
+            onClick={() => handleViewModeChange('kanban', 'status')}
+            className={`btn-outline ${viewMode.type === 'kanban' ? 'bg-blue-500/20 text-blue-400' : ''}`}
+          >
+            📊 Kanban View
+          </button>
                   <button
-                    onClick={() => deleteTask(t.id)}
-                    className="btn-outline text-xs px-3 py-2 opacity-70 group-hover:opacity-100 transition-all duration-300"
-                    title="Delete"
-                    aria-label="Delete task"
-                  >
-                    Delete
+            onClick={() => handleViewModeChange('calendar')}
+            className={`btn-outline ${viewMode.type === 'calendar' ? 'bg-blue-500/20 text-blue-400' : ''}`}
+          >
+            📅 Calendar View
                   </button>
                 </div>
-              ))}
-            </div>
 
-            {!loading && tasks.length === 0 && (
+        {/* Tasks Display */}
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-slate-400 loading-dots">Loading tasks</p>
+            </div>
+        ) : tasks.length === 0 ? (
               <div className="glass-card p-8 text-center">
                 <div className="text-6xl mb-4">✨</div>
                 <p className="text-slate-400 mb-2">No tasks yet</p>
                 <p className="text-sm text-slate-500">Add your first task to get started!</p>
               </div>
-            )}
-
-            {!loading && tasks.length > 0 && (
-              <div className="mt-6 text-center">
-                <p className="text-xs text-slate-500">
-                  {completedTasks} of {totalTasks} tasks completed
-                </p>
-              </div>
-            )}
-          </>
+        ) : (
+          <div className="space-y-3">
+            {tasks.map((task) => (
+              categories.length > 0 || priorities.length > 0 ? (
+                <EnhancedTaskItem
+                  key={task.id}
+                  task={task}
+                  onToggle={toggleTask}
+                  onUpdate={updateTask}
+                  onDelete={deleteTask}
+                  categories={categories}
+                  priorities={priorities}
+                />
+              ) : (
+                <BasicTaskItem
+                  key={task.id}
+                  task={task}
+                  onToggle={toggleTask}
+                  onUpdate={updateTask}
+                  onDelete={deleteTask}
+                />
+              )
+            ))}
+          </div>
         )}
       </section>
     </div>
