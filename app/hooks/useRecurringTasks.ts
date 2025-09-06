@@ -12,7 +12,7 @@ export function useRecurringTasks() {
 
     const now = new Date();
     const dueDate = task.due_date ? new Date(task.due_date) : now;
-    let nextDueDate = new Date(dueDate);
+    const nextDueDate = new Date(dueDate);
 
     // Calculate next occurrence based on pattern
     switch (task.recurrence_pattern) {

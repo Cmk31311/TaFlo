@@ -93,7 +93,7 @@ export function useTasksSimple(filter?: TaskFilter) {
 
     try {
       // Start with basic fields that definitely exist
-      const insertData: any = {
+      const insertData: Record<string, unknown> = {
         title: taskData.title?.trim(),
         user_id: user.id,
         is_done: false,
@@ -172,7 +172,7 @@ export function useTasksSimple(filter?: TaskFilter) {
       return;
 
       // Filter out undefined values and only include fields that have values
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       
       if (updates.title !== undefined) updateData.title = updates.title.trim();
       if (updates.description !== undefined) updateData.description = updates.description?.trim();

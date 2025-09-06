@@ -27,7 +27,7 @@ export default function SearchAndFilter({
     });
   }, [currentFilter, onFilterChange]);
 
-  const handleFilterChange = useCallback((key: keyof TaskFilter, value: any) => {
+  const handleFilterChange = useCallback((key: keyof TaskFilter, value: unknown) => {
     onFilterChange({
       ...currentFilter,
       [key]: value,

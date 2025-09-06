@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '../../lib/supabaseClient';
 
 export default function AuthPage() {
@@ -50,7 +51,7 @@ export default function AuthPage() {
         <div className="glass-card p-8">
           <h2 className="text-2xl font-semibold mb-2 gradient-text">Sign in</h2>
           <p className="text-sm text-slate-300 mb-6">
-            We'll email you a magic link.
+            We&apos;ll email you a magic link.
           </p>
 
           <input
@@ -88,9 +89,9 @@ export default function AuthPage() {
 
         {/* Back to home link */}
         <div className="text-center mt-6">
-          <a href="/" className="text-slate-400 hover:text-slate-300 text-sm">
+          <Link href="/" className="text-slate-400 hover:text-slate-300 text-sm">
             ← Back to dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>

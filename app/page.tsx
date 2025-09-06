@@ -51,7 +51,7 @@ export default function Home() {
   } = usePriorities();
 
   // Task form handlers
-  const handleAddTask = useCallback(async (taskData: any) => {
+  const handleAddTask = useCallback(async (taskData: Partial<SimpleTask>) => {
     try {
       const result = await addTask(taskData);
       if (result) {
@@ -67,7 +67,7 @@ export default function Home() {
 
   // View mode handlers
   const handleViewModeChange = useCallback((type: 'list' | 'kanban' | 'calendar', groupBy?: string) => {
-    setViewMode({ type, groupBy: groupBy as any });
+    setViewMode({ type, groupBy: groupBy as string });
   }, []);
 
   // Simple stats display
