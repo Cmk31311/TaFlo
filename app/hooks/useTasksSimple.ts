@@ -38,6 +38,14 @@ export function useTasksSimple(filter?: TaskFilter) {
     setError(null);
 
     try {
+      // For development: always use localStorage for now
+      const storedTasks = localStorage.getItem('taflo-tasks');
+      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      console.log('Tasks loaded from localStorage:', tasks);
+      setTasks(tasks);
+      setLoading(false);
+      return;
+
       // Always load all tasks, filtering will be done client-side
       const { data, error: fetchError } = await supabase
         .from('tasks')
@@ -74,6 +82,8 @@ export function useTasksSimple(filter?: TaskFilter) {
         title: taskData.title?.trim(),
         user_id: user.id,
         is_done: false,
+        created_at: new Date().toISOString(),
+        position: Date.now(), // Use timestamp for position
       };
 
       // Only add enhanced fields if they exist and have values
@@ -102,6 +112,16 @@ export function useTasksSimple(filter?: TaskFilter) {
         insertData.position = taskData.position;
       }
 
+      // For development: always use localStorage for now
+      const storedTasks = localStorage.getItem('taflo-tasks');
+      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      const newTask = { ...insertData, id: Date.now() };
+      tasks.unshift(newTask);
+      localStorage.setItem('taflo-tasks', JSON.stringify(tasks));
+      console.log('Task added to localStorage:', newTask);
+      await loadTasks();
+      return newTask;
+
       const { data, error } = await supabase
         .from('tasks')
         .insert(insertData)
@@ -125,6 +145,19 @@ export function useTasksSimple(filter?: TaskFilter) {
 
   const updateTask = useCallback(async (id: number, updates: Partial<SimpleTask>) => {
     try {
+      // For development: always use localStorage for now
+      const storedTasks = localStorage.getItem('taflo-tasks');
+      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      const taskIndex = tasks.findIndex((task: SimpleTask) => task.id === id);
+      
+      if (taskIndex !== -1) {
+        tasks[taskIndex] = { ...tasks[taskIndex], ...updates, updated_at: new Date().toISOString() };
+        localStorage.setItem('taflo-tasks', JSON.stringify(tasks));
+        console.log('Task updated in localStorage:', tasks[taskIndex]);
+        await loadTasks();
+      }
+      return;
+
       // Filter out undefined values and only include fields that have values
       const updateData: any = {};
       
@@ -155,6 +188,15 @@ export function useTasksSimple(filter?: TaskFilter) {
 
   const deleteTask = useCallback(async (id: number) => {
     try {
+      // For development: always use localStorage for now
+      const storedTasks = localStorage.getItem('taflo-tasks');
+      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      const filteredTasks = tasks.filter((task: SimpleTask) => task.id !== id);
+      localStorage.setItem('taflo-tasks', JSON.stringify(filteredTasks));
+      console.log('Task deleted from localStorage:', id);
+      await loadTasks();
+      return;
+
       const { error } = await supabase
         .from('tasks')
         .delete()

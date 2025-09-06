@@ -6,9 +6,20 @@ import { supabase } from '../../lib/supabaseClient'; // from app/hooks → ../..
 export type SupaUser = { id: string; email?: string } | null;
 
 export function useUser(): SupaUser {
-  const [user, setUser] = useState<SupaUser>(null);
+  const [user, setUser] = useState<SupaUser>({ id: 'dev-user', email: 'dev@example.com' });
 
   useEffect(() => {
+    // For development: always use mock user for now
+    console.log('useUser useEffect running - mock user already set in initial state');
+    
+    // TODO: Uncomment when Supabase authentication is properly set up
+    /*
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.log('Using mock user for development');
+      setUser({ id: 'dev-user', email: 'dev@example.com' });
+      return;
+    }
+
     let mounted = true;
 
     supabase.auth.getUser().then(({ data }) => {
@@ -23,6 +34,7 @@ export function useUser(): SupaUser {
       mounted = false;
       sub.subscription.unsubscribe();
     };
+    */
   }, []);
 
   return user;

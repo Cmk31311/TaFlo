@@ -21,6 +21,14 @@ export function useCategories() {
     setError(null);
 
     try {
+      // For development: always use localStorage for now
+      const storedCategories = localStorage.getItem('taflo-categories');
+      const categories = storedCategories ? JSON.parse(storedCategories) : [];
+      console.log('Categories loaded from localStorage:', categories);
+      setCategories(categories);
+      setLoading(false);
+      return;
+
       const { data, error: fetchError } = await supabase
         .from('categories')
         .select('*')
@@ -48,6 +56,22 @@ export function useCategories() {
     }
 
     try {
+      // For development: always use localStorage for now
+      const storedCategories = localStorage.getItem('taflo-categories');
+      const categories = storedCategories ? JSON.parse(storedCategories) : [];
+      const newCategory = {
+        id: Date.now(),
+        name: name.trim(),
+        color,
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+      };
+      categories.push(newCategory);
+      localStorage.setItem('taflo-categories', JSON.stringify(categories));
+      console.log('Category added to localStorage:', newCategory);
+      await loadCategories();
+      return newCategory;
+
       const { data, error } = await supabase
         .from('categories')
         .insert({

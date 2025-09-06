@@ -5,9 +5,16 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 
 export default function Nav() {
-  const [isAuthed, setIsAuthed] = useState(false);
+  // For development: always show as authenticated
+  const [isAuthed, setIsAuthed] = useState(true);
 
   useEffect(() => {
+    // For development: always show as authenticated
+    console.log('Nav: Setting as authenticated for development');
+    setIsAuthed(true);
+    
+    // TODO: Uncomment when Supabase authentication is properly set up
+    /*
     const getSession = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -24,6 +31,7 @@ export default function Nav() {
     });
     
     return () => sub.subscription.unsubscribe();
+    */
   }, []);
 
   const signOut = useCallback(async () => {

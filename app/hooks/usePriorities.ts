@@ -21,6 +21,14 @@ export function usePriorities() {
     setError(null);
 
     try {
+      // For development: always use localStorage for now
+      const storedPriorities = localStorage.getItem('taflo-priorities');
+      const priorities = storedPriorities ? JSON.parse(storedPriorities) : [];
+      console.log('Priorities loaded from localStorage:', priorities);
+      setPriorities(priorities);
+      setLoading(false);
+      return;
+
       const { data, error: fetchError } = await supabase
         .from('priorities')
         .select('*')
@@ -48,6 +56,23 @@ export function usePriorities() {
     }
 
     try {
+      // For development: always use localStorage for now
+      const storedPriorities = localStorage.getItem('taflo-priorities');
+      const priorities = storedPriorities ? JSON.parse(storedPriorities) : [];
+      const newPriority = {
+        id: Date.now(),
+        name: name.trim(),
+        level,
+        color,
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+      };
+      priorities.push(newPriority);
+      localStorage.setItem('taflo-priorities', JSON.stringify(priorities));
+      console.log('Priority added to localStorage:', newPriority);
+      await loadPriorities();
+      return newPriority;
+
       const { data, error } = await supabase
         .from('priorities')
         .insert({

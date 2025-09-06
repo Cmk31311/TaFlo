@@ -20,6 +20,11 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>({ type: 'list' });
   const [showTaskForm, setShowTaskForm] = useState(false);
 
+  // Debug logging
+  console.log('Current user:', user);
+  console.log('User type:', typeof user);
+  console.log('User is null?', user === null);
+
   // Data hooks
   const { 
     tasks, 
@@ -90,33 +95,7 @@ export default function Home() {
     </div>
   ), [stats]);
 
-  if (!user) {
-  return (
-    <div className="grid place-items-center min-h-screen">
-      <section className="glass w-full max-w-4xl p-8">
-        <header className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="gradient-text text-4xl font-bold tracking-tight mb-2">TaFlo</h1>
-            <p className="text-slate-300 text-sm">Your futuristic task companion</p>
-          </div>
-          <div className="text-right">
-            <span className="text-xs text-slate-400 block">Powered by</span>
-            <span className="glow-text text-sm font-mono">Supabase</span>
-          </div>
-        </header>
-
-          <div className="glass-card p-6 text-center">
-            <p className="text-slate-300 mb-4">
-              Welcome to the future of task management
-            </p>
-            <a className="btn-neon" href="/auth">
-              Sign In to Continue
-            </a>
-          </div>
-        </section>
-      </div>
-    );
-  }
+  // Always show the dashboard - no authentication required for development
 
   return (
     <div className="min-h-screen" style={{ transform: 'translateZ(0)', willChange: 'scroll-position' }}>
