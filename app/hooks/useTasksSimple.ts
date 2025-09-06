@@ -42,7 +42,7 @@ export function useTasksSimple(filter?: TaskFilter) {
     setError(null);
 
             try {
-              // Always load all tasks, filtering will be done client-side
+              // Try Supabase first, but fallback to localStorage if it fails
               const { data, error: fetchError } = await supabase
                 .from('tasks')
                 .select('*')
@@ -50,7 +50,7 @@ export function useTasksSimple(filter?: TaskFilter) {
                 .order('created_at', { ascending: false });
 
               if (fetchError) {
-                console.error('Supabase error:', fetchError);
+                console.error('Supabase error (falling back to localStorage):', fetchError);
                 // Fallback to localStorage if Supabase fails
                 const storedTasks = localStorage.getItem('taflo-tasks');
                 const tasks = storedTasks ? JSON.parse(storedTasks) : [];
@@ -63,11 +63,21 @@ export function useTasksSimple(filter?: TaskFilter) {
               console.log('Tasks loaded from Supabase:', data);
               setTasks(data as SimpleTask[] || []);
             } catch (err) {
-      console.error('Error loading tasks:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
+              console.error('Error loading tasks (falling back to localStorage):', err);
+              // Fallback to localStorage on any error
+              const storedTasks = localStorage.getItem('taflo-tasks');
+              const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+              console.log('Tasks loaded from localStorage fallback:', tasks);
+              setTasks(tasks);
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            console.error('Error loading tasks:', err);
+            setError(err instanceof Error ? err.message : 'Failed to load tasks');
+          } finally {
+            setLoading(false);
+          }
   }, [user]);
 
   const addTask = useCallback(async (taskData: Partial<SimpleTask>) => {
@@ -127,28 +137,32 @@ export function useTasksSimple(filter?: TaskFilter) {
         insertData.position = taskData.position;
       }
 
-              const { data, error } = await supabase
-                .from('tasks')
-                .insert(insertData)
-                .select()
-                .single();
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .insert(insertData)
+          .select()
+          .single();
 
-              if (error) {
-                console.error('Supabase error:', error);
-                // Fallback to localStorage if Supabase fails
-                const storedTasks = localStorage.getItem('taflo-tasks');
-                const tasks = storedTasks ? JSON.parse(storedTasks) : [];
-                const newTask = { ...insertData, id: Date.now() };
-                tasks.unshift(newTask);
-                localStorage.setItem('taflo-tasks', JSON.stringify(tasks));
-                console.log('Task added to localStorage fallback:', newTask);
-                await loadTasks();
-                return newTask;
-              }
+        if (error) {
+          throw error; // This will trigger the catch block below
+        }
 
-              console.log('Task added successfully to Supabase:', data);
-              await loadTasks();
-              return data;
+        console.log('Task added successfully to Supabase:', data);
+        await loadTasks();
+        return data;
+      } catch (supabaseError) {
+        console.error('Supabase error (falling back to localStorage):', supabaseError);
+        // Fallback to localStorage if Supabase fails
+        const storedTasks = localStorage.getItem('taflo-tasks');
+        const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+        const newTask = { ...insertData, id: Date.now() };
+        tasks.unshift(newTask);
+        localStorage.setItem('taflo-tasks', JSON.stringify(tasks));
+        console.log('Task added to localStorage fallback:', newTask);
+        await loadTasks();
+        return newTask;
+      }
     } catch (err) {
       console.error('Error adding task:', err);
       setError(err instanceof Error ? err.message : 'Failed to add task');
@@ -185,14 +199,29 @@ export function useTasksSimple(filter?: TaskFilter) {
       if (updates.position !== undefined) updateData.position = updates.position;
       if (updates.is_done !== undefined) updateData.is_done = updates.is_done;
 
-      const { error } = await supabase
-        .from('tasks')
-        .update(updateData)
-        .eq('id', id);
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .update(updateData)
+          .eq('id', id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      await loadTasks();
+        await loadTasks();
+      } catch (supabaseError) {
+        console.error('Supabase error (falling back to localStorage):', supabaseError);
+        // Fallback to localStorage if Supabase fails
+        const storedTasks = localStorage.getItem('taflo-tasks');
+        const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+        const taskIndex = tasks.findIndex((task: SimpleTask) => task.id === id);
+        
+        if (taskIndex !== -1) {
+          tasks[taskIndex] = { ...tasks[taskIndex], ...updates, updated_at: new Date().toISOString() };
+          localStorage.setItem('taflo-tasks', JSON.stringify(tasks));
+          console.log('Task updated in localStorage fallback:', tasks[taskIndex]);
+          await loadTasks();
+        }
+      }
     } catch (err) {
       console.error('Error updating task:', err);
       setError(err instanceof Error ? err.message : 'Failed to update task');
@@ -201,23 +230,25 @@ export function useTasksSimple(filter?: TaskFilter) {
 
   const deleteTask = useCallback(async (id: number) => {
     try {
-      // For development: always use localStorage for now
-      const storedTasks = localStorage.getItem('taflo-tasks');
-      const tasks = storedTasks ? JSON.parse(storedTasks) : [];
-      const filteredTasks = tasks.filter((task: SimpleTask) => task.id !== id);
-      localStorage.setItem('taflo-tasks', JSON.stringify(filteredTasks));
-      console.log('Task deleted from localStorage:', id);
-      await loadTasks();
-      return;
+      try {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', id);
 
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', id);
+        if (error) throw error;
 
-      if (error) throw error;
-
-      await loadTasks();
+        await loadTasks();
+      } catch (supabaseError) {
+        console.error('Supabase error (falling back to localStorage):', supabaseError);
+        // Fallback to localStorage if Supabase fails
+        const storedTasks = localStorage.getItem('taflo-tasks');
+        const tasks = storedTasks ? JSON.parse(storedTasks) : [];
+        const filteredTasks = tasks.filter((task: SimpleTask) => task.id !== id);
+        localStorage.setItem('taflo-tasks', JSON.stringify(filteredTasks));
+        console.log('Task deleted from localStorage fallback:', id);
+        await loadTasks();
+      }
     } catch (err) {
       console.error('Error deleting task:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete task');
