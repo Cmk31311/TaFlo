@@ -78,6 +78,7 @@ export function useTasksSimple(filter?: TaskFilter) {
           } finally {
             setLoading(false);
           }
+        }
   }, [user]);
 
   const addTask = useCallback(async (taskData: Partial<SimpleTask>) => {
